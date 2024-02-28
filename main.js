@@ -13,25 +13,15 @@ app.post("/execute-command", (req, res) => {
 	let conn = new Client();
 
 	conn
+		.on('error', (err) => {
+			res.status(500).send('SSH Connection Error: ' + err.message);
+		})
 		.on("ready", () => {
-			console.log("Client :: ready");
 			conn.exec(command, (err, stream) => {
-				if (err) return res.status(500).send(err);
-
 				stream
-					.on("close", (code, signal) => {
-						console.log(
-							"Stream :: close :: code: " + code + ", signal: " + signal
-						);
+					.on("data", () => {
 						conn.end();
-						res.send("Command executed with code: " + code);
 					})
-					.on("data", (data) => {
-						console.log("STDOUT: " + data);
-					})
-					.stderr.on("data", (data) => {
-						console.log("STDERR: " + data);
-					});
 			});
 		})
 		.connect({
